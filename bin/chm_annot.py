@@ -421,8 +421,8 @@ def demo():
 	global cfgr
 	if not os.path.exists('data'):
 		os.makedirs('data')
-	urllib.urlretrieve ('https://data.mendeley.com/datasets/s9m6tzcv9d/1/files/a0a3545e-670d-4881-a774-554894c6e5ee/udt_exp_X.npz', 'data/X.npz')
-	urllib.urlretrieve ('https://data.mendeley.com/datasets/s9m6tzcv9d/1/files/083aed42-6ec3-4e06-bb98-00f44adc52b5/Y.npz', 'data/Y.npz')
+	urllib.urlretrieve ('https://data.mendeley.com/datasets/s9m6tzcv9d/2/files/239690a1-3c24-45b8-96cf-ff32183d140f/udt_exp_X.npz', 'data/X.npz')
+	urllib.urlretrieve ('https://data.mendeley.com/datasets/s9m6tzcv9d/2/files/5ad8019b-4853-462f-8a42-d5eee1a311e3/Y.npz', 'data/Y.npz')
 	hoc.DATA_PATH = 'data'
 	X, Y = load_data(True, 'all', opts.spfmt)
 	def model_iter(tuned, glb_filtnames, glb_clfnames):
