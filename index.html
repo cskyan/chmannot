@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Chmannot : Cancer Hallmark Annotator">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Chmannot</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/cskyan/chmannot">View on GitHub</a>
+
+          <h1 id="project_title">Chmannot</h1>
+          <h2 id="project_tagline">Cancer Hallmark Annotator</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/cskyan/chmannot/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/cskyan/chmannot/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="cancer-hallmark-annotator" class="anchor" href="#cancer-hallmark-annotator" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Cancer Hallmark Annotator</h1>
+
+<p><code>chmannot</code> is an automatic annotator of cancer hallmark on biomedical literature. It supports abstract-level annotation which means that given the abstract of a paper in PubMed it could predict the hallmark labels related to this paper. It is mainly used to evaluate the computational models and tune the model parameters. It also provides several utility functions to manipulate the dataset and post-process the results.</p>
+
+<h2>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting Started</h2>
+
+<p>The following instructions will help you get a copy of the source code as well as the datasets, and run the programs on your own machine.</p>
+
+<h3>
+<a id="prerequisities" class="anchor" href="#prerequisities" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Prerequisities</h3>
+
+<p>Firstly, you need to install a Python Interpreter (tested 2.7.12) and these packages:</p>
+
+<ul>
+<li>numpy (tested 1.11.1)</li>
+<li>scipy (tested 1.11.1)</li>
+<li>matplotlib (tested 1.5.1)</li>
+<li>pandas (tested 0.18.1)</li>
+<li>scikit-learn (tested 0.17.1)</li>
+<li>pyyaml (test 3.11)</li>
+<li>rdflib [optional] (tested 4.2.1)</li>
+</ul>
+
+<h3>
+<a id="download-the-source-code" class="anchor" href="#download-the-source-code" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Download the Source Code</h3>
+
+<p>You can clone the repository of this project and then update the submodule after entering the main folder:</p>
+
+<pre><code>git clone https://github.com/cskyan/chmannot.git
+cd hmannot
+git submodule update --init --recursive
+</code></pre>
+
+<p>Or you can clone the repository and submodules simultaneously:</p>
+
+<pre><code>git clone --recursive https://github.com/cskyan/chmannot.git
+</code></pre>
+
+<h3>
+<a id="configure-environment-variable" class="anchor" href="#configure-environment-variable" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configure Environment Variable</h3>
+
+<ul>
+<li>Add the path of folder <code>bin</code> to $PATH variable so that you can run the scripts wherever you want. <em>Remember to grant execution permissions to all the files located in</em> <code>bin</code>
+</li>
+<li>Add the path of folder <code>lib</code> to $PYTHONPATH variable so that the Python Interpreter can find the library <code>bionlp</code>.</li>
+</ul>
+
+<h3>
+<a id="configuration-file" class="anchor" href="#configuration-file" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration File</h3>
+
+<p>The global configuration file is stored as <code>etc/config.yaml</code>. The configurations of different functions in different modules are separated, which looks like the snip below.</p>
+
+<pre><code>MODULE1:
+- function: FUNCTION1
+  params:
+    PARAMETER1: VALUE1
+    PARAMETER2: VALUE2
+- function: FUNCTION2
+  params:
+    PARAMETER1: VALUE1
+
+MODULE2:
+- function: FUNCTION1
+  params:
+    PARAMETER1: VALUE1
+</code></pre>
+
+<p>Hence you can access a specific parameter VALUE using a triple (MODULE, FUNCTION, PARAMETER). The parameters under the function <code>init</code> means that they are defined in module scope, while the parameters under the function <code>common</code> means that they are shared among all the functions inside the corresponding module.</p>
+
+<h3>
+<a id="locate-the-pre-generated-dataset" class="anchor" href="#locate-the-pre-generated-dataset" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Locate the Pre-Generated Dataset</h3>
+
+<p>After cloning the repository, you can download some pre-generated datasets <a href="https://data.mendeley.com/datasets/s9m6tzcv9d">here</a> . These datasets are organized as <a href="http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html">csc sparse matrices</a> stored in compressed <code>npz</code> files using the <a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.savez_compressed.html">function</a> of <code>numpy</code>. </p>
+
+<p><em>Datasets Description</em></p>
+
+<ul>
+<li>orig_X.npz - Standard dataset</li>
+<li>exp_X.npz - Expanded dataset</li>
+<li>dt_orig_X.npz - Standard dataset filtered by DT</li>
+<li>dt_exp_X.npz - Expanded dataset filtered by DT</li>
+<li>udt_orig_X.npz - Standard dataset filtered by UDT</li>
+<li><p>udt_exp_X.npz - Expanded dataset filtered by UDT</p></li>
+<li><p>Y.npz - Cancer hallmark labels</p></li>
+<li>y_[0-9].npz - Separated cancer hallmark label</li>
+</ul>
+
+<p><strong>In order to locate the dataset you want to use, please rename it to 'X.npz', and change the parameter <code>DATA_PATH</code> of module <code>bionlp.spider.hoc</code> inside <code>etc/config.yaml</code> into the location of 'X.npz'.</strong></p>
+
+<p>You can load a dataset into a <a href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html">Pandas DataFrame</a>, with the corresponding <code>PMID</code> as index and each feature as column name, using the utility function <code>read_df</code> in <code>bionlp.util.io</code>:</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-k">import</span> bionlp.util.io <span class="pl-k">as</span> io
+<span class="pl-c1">X</span> <span class="pl-k">=</span> io.read_df(<span class="pl-s"><span class="pl-pds">'</span>X.npz<span class="pl-pds">'</span></span>, <span class="pl-v">with_idx</span><span class="pl-k">=</span><span class="pl-c1">True</span>, <span class="pl-v">sparse_fmt</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>csc<span class="pl-pds">'</span></span>)</pre></div>
+
+<h3>
+<a id="a-simple-example" class="anchor" href="#a-simple-example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>A Simple Example</h3>
+
+<p>You can run a demo using the following command:</p>
+
+<div class="highlight highlight-source-shell"><pre>chm_annot.py -m demo</pre></div>
+
+<p>This demo will download a dataset automatically and perform a 5-fold cross validation on the proposed method UDT-RF. The log is printed to standard output and the results are saved on the disk.</p>
+
+<h2>
+<a id="parameter-tuning" class="anchor" href="#parameter-tuning" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Parameter Tuning</h2>
+
+<p>For the sake of the best performance, you should tune the parameters of your selected model and write them on the model configuration file so that you can use these tuned parameters for model evaluation. </p>
+
+<h3>
+<a id="setup-parameter-range" class="anchor" href="#setup-parameter-range" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setup parameter range</h3>
+
+<p>You can edit the function <code>gen_mdl_params</code> inside <code>bin/chm_annot.py</code> to change the range of parameter tuning. Please uncomment the code lines corresponded to your selected model and change the range of the parameters or append other values you want to test.</p>
+
+<h3>
+<a id="run-parameter-tuning-script" class="anchor" href="#run-parameter-tuning-script" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Run parameter tuning script</h3>
+
+<p>You can choose an approach for parameter tuning using the following command.</p>
+
+<p><em>Grid Search</em>:</p>
+
+<div class="highlight highlight-source-shell"><pre>chm_annot.py -t</pre></div>
+
+<p><em>Random Search</em>:</p>
+
+<div class="highlight highlight-source-shell"><pre>chm_annot.py -t -r</pre></div>
+
+<h3>
+<a id="covert-the-result-to-configuration-file" class="anchor" href="#covert-the-result-to-configuration-file" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Covert the result to configuration file</h3>
+
+<p>You can use the utility function in <code>bin/chm_helper.py</code> to transformat your tuning result by the following command:</p>
+
+<div class="highlight highlight-source-shell"><pre>chm_helper.py -m n2y -l TUNING_OUTPUT_FOLDER_PATH</pre></div>
+
+<p><strong>Then copy the basename of the configuration file ended with <code>.yaml</code> to the parameter <code>mdl_cfg</code> of module <code>chm_annot</code> inside <code>etc/config.yaml</code>.</strong></p>
+
+<p>The pre-tuned parameters for some models are stored in <code>etc/mdlcfg.yaml</code>.</p>
+
+<h2>
+<a id="model-evaluation" class="anchor" href="#model-evaluation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Model Evaluation</h2>
+
+<p>You can use different combination of the feature selection model and classification model to generate a pipeline as the final computational model.</p>
+
+<p>You can uncomment the corresponding code lines of the models you want to evaluate in function <code>gen_featfilt</code> and <code>gen_clfs</code> inside <code>bin/chm_annot.py</code> for feature selection and classification respectively.</p>
+
+<p>In addition, you can use command line parameter <code>-c</code> to adopt the pre-combined model in function <code>gen_cb_models</code>. To make use of the parameters stored in configuration file, you can use command line parameter <code>-c -b</code> to adopt the pre-combined model with optimized parameters.</p>
+
+<h2>
+<a id="dataset-re-generation" class="anchor" href="#dataset-re-generation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dataset Re-Generation</h2>
+
+<p>You can re-generate the dataset from the <a href="http://www.cl.cam.ac.uk/%7Esb895/HoC.html">pre-processed files</a> stored in <code>DATA_PATH</code> using the following command:</p>
+
+<div class="highlight highlight-source-shell"><pre>chm_gendata.py -m gen</pre></div>
+
+<p>It will also generate separated label data <code>y_[0-9].npz</code> for single label running.</p>
+
+<p>Feature selection method can also be applied to the dataset in advance by uncommenting the corresponding code line in function <code>gen_data</code> inside <code>bin\chm_gendata.py</code>.</p>
+
+<p>If you only want to apply feature selection on the generated dataset or generate separated label data, you can use command line parameter <code>-l</code>. Make sure your dataset has already been renamed as 'X.npz' and the processed dataset will be generated as 'new_X.npz'.</p>
+
+<h2>
+<a id="common-parameter-setting" class="anchor" href="#common-parameter-setting" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Common Parameter Setting</h2>
+
+<ul>
+<li>
+<em>-p [0-9]</em><br>
+specify which label you want to use independently</li>
+<li>
+<em>-l</em><br>
+indicate that you want to use all labels simultaneously</li>
+<li>
+<em>-k NUM</em><br>
+specify <em>K</em>-fold cross validation</li>
+<li>
+<em>-a [micro | macro]</em><br>
+specify which average strategy you want to use for multi-label annotation</li>
+<li>
+<em>-n NUM</em><br>
+specify how many CPU cores you want to use simultaneously for parallel computing</li>
+</ul>
+
+<p><strong>Other parameter specification can be obtained using <code>-h</code>.</strong></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Chmannot maintained by <a href="https://github.com/cskyan">cskyan</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
