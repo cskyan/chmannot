@@ -4,11 +4,11 @@
   <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="Chmannot : Cancer Hallmark Annotator">
+    <meta name="description" content="chmannot : Cancer Hallmark Annotator">
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <title>Chmannot</title>
+    <title>chmannot</title>
   </head>
 
   <body>
@@ -18,7 +18,7 @@
         <header class="inner">
           <a id="forkme_banner" href="https://github.com/cskyan/chmannot">View on GitHub</a>
 
-          <h1 id="project_title">Chmannot</h1>
+          <h1 id="project_title">chmannot</h1>
           <h2 id="project_tagline">Cancer Hallmark Annotator</h2>
 
             <section id="downloads">
@@ -53,37 +53,40 @@
 <li>pandas (tested 0.18.1)</li>
 <li>scikit-learn (tested 0.17.1)</li>
 <li>pyyaml (test 3.11)</li>
+<li>openpyxl (test 2.3.2)</li>
 <li>rdflib [optional] (tested 4.2.1)</li>
 </ul>
+
+<p>The simplest way to get started is to use <a href="https://www.continuum.io/anaconda-overview">Anaconda</a> Python distribution. If you have limited disk space, the <a href="http://conda.pydata.org/miniconda.html">Miniconda</a> installer is recommended. After installing Miniconda and adding the path of folder <code>bin</code> to <code>$PATH</code> variable, run the following command:</p>
+
+<div class="highlight highlight-source-shell"><pre>conda install scikit-learn pandas matplotlib openpyxl</pre></div>
 
 <h3>
 <a id="download-the-source-code" class="anchor" href="#download-the-source-code" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Download the Source Code</h3>
 
 <p>You can clone the repository of this project and then update the submodule after entering the main folder:</p>
 
-<pre><code>git clone https://github.com/cskyan/chmannot.git
-cd hmannot
-git submodule update --init --recursive
-</code></pre>
+<div class="highlight highlight-source-shell"><pre>git clone https://github.com/cskyan/chmannot.git
+<span class="pl-c1">cd</span> hmannot
+git submodule update --init --recursive</pre></div>
 
 <p>Or you can clone the repository and submodules simultaneously:</p>
 
-<pre><code>git clone --recursive https://github.com/cskyan/chmannot.git
-</code></pre>
+<div class="highlight highlight-source-shell"><pre>git clone --recursive https://github.com/cskyan/chmannot.git</pre></div>
 
 <h3>
 <a id="configure-environment-variable" class="anchor" href="#configure-environment-variable" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configure Environment Variable</h3>
 
 <ul>
-<li>Add the path of folder <code>bin</code> to $PATH variable so that you can run the scripts wherever you want. <em>Remember to grant execution permissions to all the files located in</em> <code>bin</code>
+<li>Add the path of folder <code>bin</code> to <code>$PATH</code> variable so that you can run the scripts wherever you want. <em>Remember to grant execution permissions to all the files located in</em> <code>bin</code>
 </li>
-<li>Add the path of folder <code>lib</code> to $PYTHONPATH variable so that the Python Interpreter can find the library <code>bionlp</code>.</li>
+<li>Add the path of folder <code>lib</code> to <code>$PYTHONPATH</code> variable so that the Python Interpreter can find the library <code>bionlp</code>.</li>
 </ul>
 
 <h3>
 <a id="configuration-file" class="anchor" href="#configuration-file" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration File</h3>
 
-<p>The global configuration file is stored as <code>etc/config.yaml</code>. The configurations of different functions in different modules are separated, which looks like the snip below.</p>
+<p>The global configuration file is stored as <code>etc/config.yaml</code>. The configurations of different functions in different modules are separated, which looks like the code snippet below.</p>
 
 <pre><code>MODULE1:
 - function: FUNCTION1
@@ -100,25 +103,70 @@ MODULE2:
     PARAMETER1: VALUE1
 </code></pre>
 
-<p>Hence you can access a specific parameter VALUE using a triple (MODULE, FUNCTION, PARAMETER). The parameters under the function <code>init</code> means that they are defined in module scope, while the parameters under the function <code>common</code> means that they are shared among all the functions inside the corresponding module.</p>
+<p>Hence you can access a specific parameter VALUE using a triple (MODULE, FUNCTION, PARAMETER). The utility function <code>cfg_reader</code> in <code>bionlp.util.io</code> can be used to read the parameters in the configuration file:</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-k">import</span> bionlp.util.io <span class="pl-k">as</span> io
+cfgr <span class="pl-k">=</span> io.cfg_reader(<span class="pl-c1">CONFIG_FILE_PATH</span>)
+cfg <span class="pl-k">=</span> cfgr(<span class="pl-c1">MODULE</span>, <span class="pl-c1">FUNCTION</span>)
+<span class="pl-c1">VALUE</span> <span class="pl-k">=</span> cfg[<span class="pl-c1">PARAMETER</span>]</pre></div>
+
+<p>The parameters under the function <code>init</code> means that they are defined in module scope, while the parameters under the function <code>common</code> means that they are shared among all the functions inside the corresponding module.</p>
 
 <h3>
 <a id="locate-the-pre-generated-dataset" class="anchor" href="#locate-the-pre-generated-dataset" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Locate the Pre-Generated Dataset</h3>
 
-<p>After cloning the repository, you can download some pre-generated datasets <a href="https://data.mendeley.com/datasets/s9m6tzcv9d">here</a> . These datasets are organized as <a href="http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html">csc sparse matrices</a> stored in compressed <code>npz</code> files using the <a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.savez_compressed.html">function</a> of <code>numpy</code>. </p>
+<p>After cloning the repository, you can download some pre-generated datasets <a href="https://data.mendeley.com/datasets/s9m6tzcv9d">here</a> . The datasets described below are organized as <a href="http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html">csc sparse matrices</a>, stored in compressed <code>npz</code> files using the <a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.savez_compressed.html">function</a> of <code>numpy</code>. </p>
 
-<p><em>Datasets Description</em></p>
-
-<ul>
-<li>orig_X.npz - Standard dataset</li>
-<li>exp_X.npz - Expanded dataset</li>
-<li>dt_orig_X.npz - Standard dataset filtered by DT</li>
-<li>dt_exp_X.npz - Expanded dataset filtered by DT</li>
-<li>udt_orig_X.npz - Standard dataset filtered by UDT</li>
-<li><p>udt_exp_X.npz - Expanded dataset filtered by UDT</p></li>
-<li><p>Y.npz - Cancer hallmark labels</p></li>
-<li>y_[0-9].npz - Separated cancer hallmark label</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Filename</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>orig_X.npz</td>
+<td>Standard dataset</td>
+</tr>
+<tr>
+<td>exp_X.npz</td>
+<td>Expanded dataset</td>
+</tr>
+<tr>
+<td>udt_orig_X.npz</td>
+<td>Standard dataset filtered by UDT</td>
+</tr>
+<tr>
+<td>udt_exp_X.npz</td>
+<td>Expanded dataset filtered by UDT</td>
+</tr>
+<tr>
+<td>dt_orig_X.npz</td>
+<td>Standard dataset filtered by DT</td>
+</tr>
+<tr>
+<td>dt_exp_X.npz</td>
+<td>Expanded dataset filtered by DT</td>
+</tr>
+<tr>
+<td>union_filt_X.npz</td>
+<td>Standard dataset filtered by DF</td>
+</tr>
+<tr>
+<td>X_[0-9]</td>
+<td>Separated standard dataset</td>
+</tr>
+<tr>
+<td>Y.npz</td>
+<td>Cancer hallmark labels</td>
+</tr>
+<tr>
+<td>y_[0-9].npz</td>
+<td>Separated cancer hallmark label</td>
+</tr>
+</tbody>
+</table>
 
 <p><strong>In order to locate the dataset you want to use, please rename it to 'X.npz', and change the parameter <code>DATA_PATH</code> of module <code>bionlp.spider.hoc</code> inside <code>etc/config.yaml</code> into the location of 'X.npz'.</strong></p>
 
@@ -220,7 +268,7 @@ specify how many CPU cores you want to use simultaneously for parallel computing
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright">Chmannot maintained by <a href="https://github.com/cskyan">cskyan</a></p>
+        <p class="copyright">chmannot maintained by <a href="https://github.com/cskyan">cskyan</a></p>
         <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
