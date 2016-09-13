@@ -16,13 +16,20 @@ Firstly, you need to install a Python Interpreter (tested 2.7.12) and these pack
 * pandas (tested 0.18.1)
 * scikit-learn (tested 0.17.1)
 * pyyaml (test 3.11)
+* openpyxl (test 2.3.2)
 * rdflib \[optional\] \(tested 4.2.1\)
+
+The simplest way to get started is to use [Anaconda](https://www.continuum.io/anaconda-overview) Python distribution. If you have limited disk space, the [Miniconda](http://conda.pydata.org/miniconda.html) installer is recommended. After installing Miniconda and adding the path of folder `bin` to `$PATH` variable, run the following command:
+
+```bash
+conda install scikit-learn pandas matplotlib openpyxl
+```
 
 ### Download the Source Code
 
 You can clone the repository of this project and then update the submodule after entering the main folder:
 
-```
+```bash
 git clone https://github.com/cskyan/chmannot.git
 cd hmannot
 git submodule update --init --recursive
@@ -30,18 +37,18 @@ git submodule update --init --recursive
 
 Or you can clone the repository and submodules simultaneously:
 
-```
+```bash
 git clone --recursive https://github.com/cskyan/chmannot.git
 ```
 
 ### Configure Environment Variable
 
-* Add the path of folder `bin` to $PATH variable so that you can run the scripts wherever you want. *Remember to grant execution permissions to all the files located in* `bin`
-* Add the path of folder `lib` to $PYTHONPATH variable so that the Python Interpreter can find the library `bionlp`.
+* Add the path of folder `bin` to `$PATH` variable so that you can run the scripts wherever you want. *Remember to grant execution permissions to all the files located in* `bin`
+* Add the path of folder `lib` to `$PYTHONPATH` variable so that the Python Interpreter can find the library `bionlp`.
 
 ### Configuration File
 
-The global configuration file is stored as `etc/config.yaml`. The configurations of different functions in different modules are separated, which looks like the snip below.
+The global configuration file is stored as `etc/config.yaml`. The configurations of different functions in different modules are separated, which looks like the code snippet below.
 
 ```
 MODULE1:
@@ -59,23 +66,33 @@ MODULE2:
     PARAMETER1: VALUE1
 ```
 
-Hence you can access a specific parameter VALUE using a triple (MODULE, FUNCTION, PARAMETER). The parameters under the function `init` means that they are defined in module scope, while the parameters under the function `common` means that they are shared among all the functions inside the corresponding module.
+Hence you can access a specific parameter VALUE using a triple (MODULE, FUNCTION, PARAMETER). The utility function `cfg_reader` in `bionlp.util.io` can be used to read the parameters in the configuration file:
+
+```python
+import bionlp.util.io as io
+cfgr = io.cfg_reader(CONFIG_FILE_PATH)
+cfg = cfgr(MODULE, FUNCTION)
+VALUE = cfg[PARAMETER]
+```
+
+The parameters under the function `init` means that they are defined in module scope, while the parameters under the function `common` means that they are shared among all the functions inside the corresponding module.
 
 ### Locate the Pre-Generated Dataset
 
-After cloning the repository, you can download some pre-generated datasets [here](https://data.mendeley.com/datasets/s9m6tzcv9d) . These datasets are organized as [csc sparse matrices](http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html) stored in compressed `npz` files using the [function](http://docs.scipy.org/doc/numpy/reference/generated/numpy.savez_compressed.html) of `numpy`. 
+After cloning the repository, you can download some pre-generated datasets [here](https://data.mendeley.com/datasets/s9m6tzcv9d) . The datasets described below are organized as [csc sparse matrices](http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html), stored in compressed `npz` files using the [function](http://docs.scipy.org/doc/numpy/reference/generated/numpy.savez_compressed.html) of `numpy`. 
 
-*Datasets Description*
-
-* orig_X.npz - Standard dataset
-* exp_X.npz - Expanded dataset
-* dt_orig_X.npz - Standard dataset filtered by DT
-* dt_exp_X.npz - Expanded dataset filtered by DT
-* udt_orig_X.npz - Standard dataset filtered by UDT
-* udt_exp_X.npz - Expanded dataset filtered by UDT
-
-* Y.npz - Cancer hallmark labels
-* y_[0-9].npz - Separated cancer hallmark label
+Filename | Description  
+--- | ---  
+orig_X.npz | Standard dataset
+exp_X.npz | Expanded dataset
+udt_orig_X.npz | Standard dataset filtered by UDT
+udt_exp_X.npz | Expanded dataset filtered by UDT
+dt_orig_X.npz | Standard dataset filtered by DT
+dt_exp_X.npz | Expanded dataset filtered by DT
+union_filt_X.npz | Standard dataset filtered by DF
+X_[0-9] | Separated standard dataset
+Y.npz | Cancer hallmark labels
+y_[0-9].npz | Separated cancer hallmark label
 
 **In order to locate the dataset you want to use, please rename it to 'X.npz', and change the parameter `DATA_PATH` of module `bionlp.spider.hoc` inside `etc/config.yaml` into the location of 'X.npz'.**
 
