@@ -90,7 +90,7 @@ udt_exp_X.npz | Expanded dataset filtered by UDT
 dt_orig_X.npz | Standard dataset filtered by DT
 dt_exp_X.npz | Expanded dataset filtered by DT
 union_filt_X.npz | Standard dataset filtered by DF
-X_[0-9] | Separated standard dataset
+X_[0-9].npz | Separated standard dataset
 Y.npz | Cancer hallmark labels
 y_[0-9].npz | Separated cancer hallmark label
 
@@ -111,7 +111,13 @@ You can run a demo using the following command:
 chm_annot.py -m demo
 ```
 
-This demo will download a dataset automatically and perform a 5-fold cross validation on the proposed method UDT-RF. The log is printed to standard output and the results are saved on the disk.
+*If your operating system is Windows, please use the Python Interpreter to execute the python scripts:*
+
+```bash
+python chm_annot.py -m demo
+```
+
+This demo will automatically download a dataset and perform a 5-fold cross validation on the proposed method UDT-RF. The log is printed to standard output and the results are saved on the disk.
 
 ## Parameter Tuning
 
