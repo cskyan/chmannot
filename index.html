@@ -154,7 +154,7 @@ cfg <span class="pl-k">=</span> cfgr(<span class="pl-c1">MODULE</span>, <span cl
 <td>Standard dataset filtered by DF</td>
 </tr>
 <tr>
-<td>X_[0-9]</td>
+<td>X_[0-9].npz</td>
 <td>Separated standard dataset</td>
 </tr>
 <tr>
@@ -182,7 +182,11 @@ cfg <span class="pl-k">=</span> cfgr(<span class="pl-c1">MODULE</span>, <span cl
 
 <div class="highlight highlight-source-shell"><pre>chm_annot.py -m demo</pre></div>
 
-<p>This demo will download a dataset automatically and perform a 5-fold cross validation on the proposed method UDT-RF. The log is printed to standard output and the results are saved on the disk.</p>
+<p><em>If your operating system is Windows, please use the Python Interpreter to execute the python scripts:</em></p>
+
+<div class="highlight highlight-source-shell"><pre>python chm_annot.py -m demo</pre></div>
+
+<p>This demo will automatically download a dataset and perform a 5-fold cross validation on the proposed method UDT-RF. The log is printed to standard output and the results are saved on the disk.</p>
 
 <h2>
 <a id="parameter-tuning" class="anchor" href="#parameter-tuning" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Parameter Tuning</h2>
