@@ -31,7 +31,7 @@ You can clone the repository of this project and then update the submodule after
 
 ```bash
 git clone https://github.com/cskyan/chmannot.git
-cd hmannot
+cd chmannot
 git submodule update --init --recursive
 ```
 
