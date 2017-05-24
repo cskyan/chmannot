@@ -23,21 +23,16 @@ from sklearn.preprocessing import Normalizer, MinMaxScaler
 from sklearn.decomposition import LatentDirichletAllocation, NMF, TruncatedSVD
 
 import bionlp.spider.pubmed as pm
-import bionlp.spider.hoc as hoc
 import bionlp.spider.metamap as mm
-import bionlp.ftslct as ftslct
-import bionlp.ftdecomp as ftdecomp
-import bionlp.util.fs as fs
-import bionlp.util.io as io
-import bionlp.util.sampling as sampling
+from bionlp import ftslct, ftdecomp
+from bionlp.util import fs, io, sampling
+
+import hoc
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 PAR_DIR = os.path.abspath(os.path.join(FILE_DIR, os.path.pardir))
 CONFIG_FILE = os.path.join(PAR_DIR, 'etc', 'config.yaml')
 SPDR_MAP = {'hoc':hoc, 'pbmd':pm}
-EQPRDC_MAP = {'concept':'co', 'preferredConcept':'pc', 'relatedConcept':'rc', 'term':'tm', 'preferredTerm':'pt'}
-BTPRDC_MAP = {'broader':'br', 'broaderConcept':'bc', 'broaderDescriptor':'bd'}
-NTPRDC_MAP = {'narrowerConcept':'nc'}
 SC=';;'
 
 opts, args = {}, []
@@ -59,7 +54,7 @@ def gen_data():
 	# mask_mt = np.zeros(mt.shape)
 	# mask_mt[mt.row, mt.col] = 1
 	# stat = mask_mt.sum(axis=0)
-	# cln_X = X.iloc[:,np.arange(stat.shape[0])[stat>ast.literal_eval(opts.thrhd) * (stat.max() - stat.min()) + stat.min()]]
+	# cln_X = X.iloc[:,np.arange(stat.shape[0])[stat>ast.literal_eval(opts.thrshd) * (stat.max() - stat.min()) + stat.min()]]
 	
 	# Document Frequence
 	# stat, _ = ftslct.freqs(X.values, Y.values)
@@ -98,7 +93,6 @@ def gen_data():
 			io.write_df(y, os.path.join(spdr.DATA_PATH, 'y_%s.npz' % i), with_col=False, with_idx=True)
 		else:
 			y.to_csv(os.path.join(spdr.DATA_PATH, 'y_%s.csv' % i), encoding='utf8')
-		del y
 		
 
 def samp_data(sp_size = 0.3):
@@ -120,51 +114,19 @@ def samp_data(sp_size = 0.3):
 			
 def extend_mesh(ft_type='binary'):
 	X, Y = spdr.get_data(None, ft_type=opts.type, max_df=ast.literal_eval(opts.maxdf), min_df=ast.literal_eval(opts.mindf), from_file=True, fmt=opts.fmt, spfmt=opts.spfmt)
-	mesh_df = mm.get_mesh(X.index)
+	mesh_df = mm.mesh_countvec(X.index)
 	mesh_df.columns = ['extmesh_' + x for x in mesh_df.columns]
 	new_X = pd.concat([X, mesh_df], axis=1, join_axes=[X.index])
 	print 'The size of data has been changed from %s to %s.' % (X.shape, new_X.shape)
 	if (opts.fmt == 'npz'):
-		io.write_df(new_X, os.path.join(spdr.DATA_PATH, 'new_X.npz'), with_idx=True, sparse_fmt=opts.spfmt, compress=True)
+		io.write_df(new_X, os.path.join(spdr.DATA_PATH, 'extmesh_X.npz'), with_idx=True, sparse_fmt=opts.spfmt, compress=True)
 	else:
-		new_X.to_csv(os.path.join(spdr.DATA_PATH, 'new_X.csv'), encoding='utf8')
-
-		
-def slct_sim_terms(g, label, lang='en', exhausted=False):
-	from rdflib.plugins.sparql import prepareQuery
-	sim_terms = []
-	if (exhausted):
-		prdc_str = ' | '.join(['meshv:%s | ^meshv:%s' % (p, p) for p in EQPRDC_MAP.keys()])
-		q_str = '''
-			SELECT DISTINCT ?x WHERE {
-				"%s"@%s ^rdfs:label / (%s)+ / rdfs:label ?x . }
-			''' % (label, lang, prdc_str)
-		q = prepareQuery(q_str, initNs={'rdfs':RDFS, 'meshv':MESHV})
-		result = g.query(q)
-		for row in result:
-			sim_terms.append(row[0].toPython())
-	else:
-		for p in EQPRDC_MAP.keys():
-			q_str = '''
-				SELECT DISTINCT ?x WHERE { 
-					"%s"@%s ^rdfs:label / (meshv:%s | ^meshv:%s) / rdfs:label ?x . }
-				''' % (label, lang, p, p)
-			q = prepareQuery(q_str, initNs={'rdfs':RDFS, 'meshv':MESHV})
-			result = g.query(q)
-			for row in result:
-				sim_terms.append('%s_%s' % (EQPRDC_MAP[p], row[0].toPython()))
-	return sim_terms
+		new_X.to_csv(os.path.join(spdr.DATA_PATH, 'extmesh_X.csv'), encoding='utf8')
 
 	
-def expand_data(ft_type='binary', db_name='mesh2016', db_type='Sleepycat', store_path='store'):
+def expand_data(ft_type='binary', db_name='mesh2016', db_type='LevelDB', store_path='store'):
 	from rdflib import Graph
-	from rdflib import Namespace
-	
-	DCTERMS = Namespace('http://purl.org/dc/terms/')
-	FOAF = Namespace('http://xmlns.com/foaf/0.1/')
-	RDFS = Namespace('http://www.w3.org/2000/01/rdf-schema#')
-	XSD = Namespace('http://www.w3.org/2001/XMLSchema#')
-	MESHV = Namespace('http://id.nlm.nih.gov/mesh/vocab#')
+	from bionlp.util import ontology
 	
 	X, Y = spdr.get_data(None, ft_type=opts.type, max_df=ast.literal_eval(opts.maxdf), min_df=ast.literal_eval(opts.mindf), from_file=True, fmt=opts.fmt, spfmt=opts.spfmt)
 	mesh_cols = filter(lambda x: x.startswith('mesh_') or x.startswith('extmesh_'), X.columns)
@@ -176,7 +138,7 @@ def expand_data(ft_type='binary', db_name='mesh2016', db_type='Sleepycat', store
 	for col in mesh_X.columns:
 		mesh_lb = col.strip('extmesh_').strip('mesh_').replace('"', '\\"')
 		# Get similar MeSH terms
-		em_set = set(slct_sim_terms(g, mesh_lb))
+		em_set = set(ontology.slct_sim_terms(g, mesh_lb, prdns=[('meshv',ontology.MESHV)], eqprds=ontology.MESH_EQPRDC_MAP))
 		# Overall extended MeSH terms
 		exp_meshx |= em_set
 		# Extended MeSH terms per column
@@ -196,9 +158,9 @@ def expand_data(ft_type='binary', db_name='mesh2016', db_type='Sleepycat', store
 	new_X = pd.concat([X, exp_mesh_X], axis=1, join_axes=[X.index])
 	print 'The size of data has been changed from %s to %s.' % (X.shape, new_X.shape)
 	if (opts.fmt == 'npz'):
-		io.write_df(new_X, os.path.join(spdr.DATA_PATH, 'new_X.npz'), with_idx=True, sparse_fmt=opts.spfmt, compress=True)
+		io.write_df(new_X, os.path.join(spdr.DATA_PATH, 'exp_X.npz'), with_idx=True, sparse_fmt=opts.spfmt, compress=True)
 	else:
-		new_X.to_csv(os.path.join(spdr.DATA_PATH, 'new_X.csv'), encoding='utf8')
+		new_X.to_csv(os.path.join(spdr.DATA_PATH, 'exp_X.csv'), encoding='utf8')
 		
 		
 def decomp_data(method='LDA', n_components=100):
@@ -216,19 +178,21 @@ def decomp_data(method='LDA', n_components=100):
 	if (opts.prefix == 'all'):
 		td_cols = X.columns
 	else:
+		# Only apply dimension reduction on specific columns
 		td_cols = np.array(map(lambda x: True if any(x.startswith(prefix) for prefix in opts.prefix.split(SC)) else False, X.columns))
 	td_X = X.loc[:,td_cols]
 	new_td_X = model.fit_transform(td_X.as_matrix())
 	if (opts.prefix == 'all'):
 		columns = range(new_td_X.shape[1]) if not hasattr(model.steps[0][1], 'components_') else td_X.columns[model.steps[0][1].components_.argmax(axis=1)]
-		new_X = pd.DataFrame(new_td_X, columns=['tp_%s' % x for x in columns])
+		new_X = pd.DataFrame(new_td_X, index=X.index, columns=['tp_%s' % x for x in columns])
 	else:
 		columns = range(new_td_X.shape[1]) if not hasattr(model.steps[0][1], 'components_') else td_X.columns[model.steps[0][1].components_.argmax(axis=1)]
-		new_X = pd.concat([pd.DataFrame(new_td_X, columns=['tp_%s' % x for x in columns]), X.loc[:,np.logical_not(td_cols)]], axis=1)
+		# Concatenate the components and the columns are not applied dimension reduction on
+		new_X = pd.concat([pd.DataFrame(new_td_X, index=X.index, columns=['tp_%s' % x for x in columns]), X.loc[:,np.logical_not(td_cols)]], axis=1)
 	if (opts.fmt == 'npz'):
-		io.write_df(new_X, os.path.join(spdr.DATA_PATH, 'new_X.npz'), with_idx=True, sparse_fmt=opts.spfmt, compress=True)
+		io.write_df(new_X, os.path.join(spdr.DATA_PATH, '%s%i_X.npz' % (method.lower(), n_components)), with_idx=True, sparse_fmt=opts.spfmt, compress=True)
 	else:
-		new_X.to_csv(os.path.join(spdr.DATA_PATH, 'new_X.csv'), encoding='utf8')
+		new_X.to_csv(os.path.join(spdr.DATA_PATH, '%s%i_X.csv' % (method.lower(), n_components)), encoding='utf8')
 		
 		
 def add_d2v(n_components=100, win_size=8, min_t=5, mdl_fname='d2v.mdl'):
@@ -266,16 +230,18 @@ def add_d2v(n_components=100, win_size=8, min_t=5, mdl_fname='d2v.mdl'):
 		
 	X, Y = spdr.get_data(None, ft_type=opts.type, max_df=ast.literal_eval(opts.maxdf), min_df=ast.literal_eval(opts.mindf), from_file=True, fmt=opts.fmt, spfmt=opts.spfmt)
 	# Map the index of original matrix to that of the paragraph vectors
-	d2v_idx = [model.docvecs.index_to_doctag(i) for i in range(model.docvecs.count)]
+	d2v_idx = [model.docvecs.index_to_doctag(i).rstrip('.lem') for i in range(model.docvecs.count)]
 	mms = MinMaxScaler()
 	d2v_X = pd.DataFrame(mms.fit_transform(model.docvecs[range(model.docvecs.count)]), index=d2v_idx, columns=['d2v_%i' % i for i in range(model.docvecs[0].shape[0])])
 	# d2v_X = pd.DataFrame(model.docvecs[range(model.docvecs.count)], index=d2v_idx, columns=['d2v_%i' % i for i in range(model.docvecs[0].shape[0])])
 	new_X = pd.concat([X, d2v_X], axis=1, join_axes=[X.index])
 	print 'The size of data has been changed from %s to %s.' % (X.shape, new_X.shape)
 	if (opts.fmt == 'npz'):
-		io.write_df(new_X, os.path.join(spdr.DATA_PATH, 'new_X.npz'), with_idx=True, sparse_fmt=opts.spfmt, compress=True)
+		io.write_df(d2v_X, os.path.join(spdr.DATA_PATH, 'd2v_X.npz'), with_idx=True, sparse_fmt=opts.spfmt, compress=True)
+		io.write_df(new_X, os.path.join(spdr.DATA_PATH, 'cmb_d2v_X.npz'), with_idx=True, sparse_fmt=opts.spfmt, compress=True)
 	else:
-		new_X.to_csv(os.path.join(spdr.DATA_PATH, 'new_X.csv'), encoding='utf8')
+		d2v_X.to_csv(os.path.join(spdr.DATA_PATH, 'd2v_X.csv'), encoding='utf8')
+		new_X.to_csv(os.path.join(spdr.DATA_PATH, 'cmb_d2v_X.csv'), encoding='utf8')
 
 	
 def main():
@@ -304,12 +270,12 @@ if __name__ == '__main__':
 	op.add_option('-p', '--pid', action='store', type='int', dest='pid', help='indicate the process ID')
 	op.add_option('-n', '--np', default=-1, action='store', type='int', dest='np', help='indicate the number of processes used for training')
 	op.add_option('-f', '--fmt', default='npz', help='data stored format: csv or npz [default: %default]')
-	op.add_option('-s', '--spfmt', default='csc', help='sparse data stored format: csc or csr [default: %default]')
+	op.add_option('-s', '--spfmt', default='csr', help='sparse data stored format: csr or csc [default: %default]')
 	op.add_option('-l', '--local', default=False, action='store_true', dest='local', help='read data from the preprocessed data matrix file')
 	op.add_option('-t', '--type', default='binary', help='feature type: binary, numeric, tfidf [default: %default]')
 	op.add_option('-a', '--mindf', default='1', type='str', dest='mindf', help='lower document frequency threshold for term ignorance')
 	op.add_option('-b', '--maxdf', default='1.0', type='str', dest='maxdf', help='upper document frequency threshold for term ignorance')
-	op.add_option('-r', '--thrhd', default='0.05', type='str', dest='thrhd', help='feature frequency threshold for filtering')
+	op.add_option('-r', '--thrshd', default='0.05', type='str', dest='thrshd', help='feature frequency threshold for filtering')
 	op.add_option('-d', '--decomp', default='LDA', help='decomposition method to use: LDA, NMF, LSI or TSNE [default: %default]')
 	op.add_option('-c', '--cmpn', default=100, type='int', dest='cmpn', help='number of components that used in clustering model')
 	op.add_option('-j', '--prefix', default='all', type='str', dest='prefix', help='prefixes of the column names that the decomposition method acts on, for example, \'-j lem;;nn;;ner\' means columns that starts with \'lem_\', \'nn_\', or \'ner_\'')
@@ -322,10 +288,10 @@ if __name__ == '__main__':
 		op.error('Please input options instead of arguments.')
 		exit(1)
 
+	spdr = SPDR_MAP[opts.input]
 	# Parse config file
 	if (os.path.exists(CONFIG_FILE)):
 		cfgr = io.cfg_reader(CONFIG_FILE)
-		spdr = SPDR_MAP[opts.input]
 		spdr_cfg = cfgr('bionlp.spider.%s' % opts.input, 'init')
 		if (len(spdr_cfg) > 0 and spdr_cfg['DATA_PATH'] is not None and os.path.exists(spdr_cfg['DATA_PATH'])):
 			spdr.DATA_PATH = spdr_cfg['DATA_PATH']

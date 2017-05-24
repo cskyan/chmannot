@@ -20,10 +20,9 @@ import numpy as np
 import scipy as sp
 import pandas as pd
 
-import bionlp.spider.hoc as hoc
-import bionlp.util.fs as fs
-import bionlp.util.io as io
-import bionlp.util.plot as plot
+from bionlp.util import fs, io, plot
+
+import hoc
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 PAR_DIR = os.path.abspath(os.path.join(FILE_DIR, os.path.pardir))
@@ -169,23 +168,16 @@ def pred2uniq(dir_path, file_ptn, mdls, pids=range(10), crsval=10):
 					uniqp_dict[mdls[i]][HMLB[j % true_lb.shape[1]]].append(test_idx[j / true_lb.shape[1]])
 				uniq_true_list.append(', '.join(['%s | %s' % (test_idx[x/true_lb.shape[1]], x%true_lb.shape[1]) for x in uniq_true]))
 			uniq_true_str = '\n'.join(['%s: %s' % (mdls[i], uniq_true_list[i]) for i in range(len(uniq_true_list))])
-			fs.write_file(os.path.join(dir_path, 'uniqtrue_crsval_%s_%s.txt' % (crs_t, pid)), uniq_true_str)
+			fs.write_file(uniq_true_str, os.path.join(dir_path, 'uniqtrue_crsval_%s_%s.txt' % (crs_t, pid)))
 	for mdl, idmap in uniqp_dict.iteritems():
 		uniqp_df = pd.DataFrame([(hm, ', '.join(idmap[hm])) for hm in HMLB], columns=['Hallmark', 'PMIDS'])
 		uniqp_df.to_excel(os.path.join(dir_path, 'uniqtrue_%s.xlsx' % mdl), index=False)
 
 
-def nt2db(dir_path='.'):
-	import rdflib
-	nt_file = 'mesh2016_samp.nt'
-	db_path = os.path.join(dir_path, 'store')
-	db_name = os.path.splitext(nt_file)[0]
-	print 'Creating RDF database %s in %s...' % (db_name, db_path)
-	fs.mkdir(db_path)
-	graph = rdflib.Graph("Sleepycat", identifier=db_name)
-	graph.open(db_path, create=True)
-	graph.parse(os.path.join(dir_path, nt_file), format='nt')
-	graph.close()
+def nt2db():
+	import bionlp.util.ontology as ontology
+	kwargs = {} if opts.cfg is None else ast.literal_eval(opts.cfg)
+	ontology.files2db(opts.loc, fmt='nt', saved_path=os.path.splitext(opts.loc)[0] if opts.output is None else opts.output, **kwargs)
 	
 	
 def nt2xml(dir_path='.'):
@@ -204,7 +196,7 @@ def axstat(spdr):
 	data_path = spdr.DATA_PATH
 	mt_file = 'X.npz'
 	import bionlp.util.io as io
-	mt = sp.sparse.coo_matrix(io.read_df(os.path.join(data_path, mt_file), sparse_fmt='csc').as_matrix())
+	mt = sp.sparse.coo_matrix(io.read_df(os.path.join(data_path, mt_file), sparse_fmt='csr').as_matrix())
 	mask_mt = np.zeros(mt.shape)
 	mask_mt[mt.row, mt.col] = 1
 	axstat0 = mask_mt.sum(axis=0)
@@ -219,8 +211,8 @@ def axstat_cmp(spdr):
 	data_path = spdr.DATA_PATH
 	mt1_file, mt2_file = 'X1.npz', 'X2.npz'
 	import bionlp.util.io as io
-	mt1 = sp.sparse.coo_matrix(io.read_df(os.path.join(data_path, mt1_file), sparse_fmt='csc').as_matrix())
-	mt2 = sp.sparse.coo_matrix(io.read_df(os.path.join(data_path, mt2_file), sparse_fmt='csc').as_matrix())
+	mt1 = sp.sparse.coo_matrix(io.read_df(os.path.join(data_path, mt1_file), sparse_fmt='csr').as_matrix())
+	mt2 = sp.sparse.coo_matrix(io.read_df(os.path.join(data_path, mt2_file), sparse_fmt='csr').as_matrix())
 	mask1_mt = np.zeros(mt1.shape)
 	mask2_mt = np.zeros(mt2.shape)
 	mask1_mt[mt1.row, mt1.col] = 1
@@ -238,7 +230,7 @@ def ftstat(spdr):
 	data_path = spdr.DATA_PATH
 	mt_file = 'X.npz', 'Y.npz'
 	import bionlp.util.io as io
-	X, Y = io.read_df(os.path.join(data_path, mt_file[0]), sparse_fmt='csc'), io.read_df(os.path.join(data_path, mt_file[1]), sparse_fmt='csc')
+	X, Y = io.read_df(os.path.join(data_path, mt_file[0]), sparse_fmt='csr'), io.read_df(os.path.join(data_path, mt_file[1]), sparse_fmt='csr')
 	ft_idx = {}
 	for i, col in enumerate(X.columns):
 		for ft in ft_order:
@@ -262,11 +254,21 @@ def ftstat(spdr):
 	ft_stat_pd.to_excel('ft_stat.xlsx')
 	
 	
+def param_analysis():
+	kwargs = {} if opts.cfg is None else ast.literal_eval(opts.cfg)
+	param_name = kwargs['param']
+	param_tuning = io.read_npz(opts.loc)
+	dim_names, dim_vals, best_params, score_avg, score_std = param_tuning['dim_names'].tolist(), param_tuning['dim_vals'].tolist(), param_tuning['best_params'].tolist(), param_tuning['score_avg_cube'], param_tuning['score_std_cube']
+	param_dim = dim_names[target_param]
+	val, avg, std = analyze_param(param_name, score_avg, score_std, dim_names, dim_vals, best_params)
+	plot.plot_param(val, avg, std, xlabel='Number of Decision Trees', ylabel='Micro F1 Score')
+	
+	
 def matshow(spdr):
 	from matplotlib import pyplot as plt
 	data_path = spdr.DATA_PATH
 	mt_file = 'X.npz'
-	X=io.read_df(os.path.join(data_path, mt_file), with_idx=True, sparse_fmt='csc')
+	X=io.read_df(os.path.join(data_path, mt_file), with_idx=True, sparse_fmt='csr')
 	plt.matshow(X.values, cmap=plt.cm.Blues)
 	plt.title('Standard Dataset')
 	plt.savefig('X_matshow')
@@ -284,10 +286,10 @@ def filtx(spdr):
 	data_path = spdr.DATA_PATH
 	mt_file = 'X.npz', 'Y.npz'
 	import bionlp.util.io as io
-	X, Y = io.read_df(os.path.join(data_path, mt_file[0]), with_idx=True, sparse_fmt='csc'), io.read_df(os.path.join(data_path, mt_file[1]), with_idx=True, sparse_fmt='csc')
+	X, Y = io.read_df(os.path.join(data_path, mt_file[0]), with_idx=True, sparse_fmt='csr'), io.read_df(os.path.join(data_path, mt_file[1]), with_idx=True, sparse_fmt='csr')
 	Xs = spdr.ft_filter(X, Y)
 	for i, x_df in enumerate(Xs):
-		io.write_df(x_df, os.path.join(data_path, 'X_%i.npz' % i), with_idx=True, sparse_fmt='csc', compress=True)
+		io.write_df(x_df, os.path.join(data_path, 'X_%i.npz' % i), with_idx=True, sparse_fmt='csr', compress=True)
 		
 
 def unionx(spdr):
@@ -295,7 +297,7 @@ def unionx(spdr):
 	mt_file = 'X.npz', 'Y.npz'
 	ft_order = ['lem', 'nn', 'ner', 'parse', 'vc', 'mesh', 'chem', 'extmesh']
 	import bionlp.util.io as io
-	X, Y = io.read_df(os.path.join(data_path, mt_file[0]), with_idx=True, sparse_fmt='csc'), io.read_df(os.path.join(data_path, mt_file[1]), with_idx=True, sparse_fmt='csc')
+	X, Y = io.read_df(os.path.join(data_path, mt_file[0]), with_idx=True, sparse_fmt='csr'), io.read_df(os.path.join(data_path, mt_file[1]), with_idx=True, sparse_fmt='csr')
 	ft_idx = {}
 	for i, col in enumerate(X.columns):
 		for ft in ft_order:
@@ -304,7 +306,7 @@ def unionx(spdr):
 				break
 	union_ft_idx = {}
 	for j in range(Y.shape[1]):
-		X_j = io.read_df(os.path.join(data_path, 'X_%i.npz'%j), with_idx=True, sparse_fmt='csc')
+		X_j = io.read_df(os.path.join(data_path, 'X_%i.npz'%j), with_idx=True, sparse_fmt='csr')
 		for i, col in enumerate(X_j.columns):
 			for ft in ft_order:
 				if (col.startswith(ft+'_')):
@@ -314,7 +316,7 @@ def unionx(spdr):
 	for ft in ft_order:
 		new_ft.extend(list(union_ft_idx[ft]))
 	union_X = X.loc[:,new_ft]
-	io.write_df(union_X, os.path.join(data_path, 'union_X.npz'), with_idx=True, sparse_fmt='csc', compress=True)
+	io.write_df(union_X, os.path.join(data_path, 'union_X.npz'), with_idx=True, sparse_fmt='csr', compress=True)
 		
 		
 def leave1out(spdr, mltl=True):
@@ -322,7 +324,7 @@ def leave1out(spdr, mltl=True):
 	mt_file = 'X.npz', 'Y.npz'
 	ft_order = ['lem', 'nn', 'ner', 'parse', 'vc', 'mesh', 'chem']
 	import bionlp.util.io as io
-	X, Y = io.read_df(os.path.join(data_path, mt_file[0]), with_idx=True, sparse_fmt='csc'), io.read_df(os.path.join(data_path, mt_file[1]), with_idx=True, sparse_fmt='csc')
+	X, Y = io.read_df(os.path.join(data_path, mt_file[0]), with_idx=True, sparse_fmt='csr'), io.read_df(os.path.join(data_path, mt_file[1]), with_idx=True, sparse_fmt='csr')
 	ft_dict = {}
 	for col in X.columns:
 		for ft in ft_order:
@@ -332,13 +334,13 @@ def leave1out(spdr, mltl=True):
 	if (mltl):
 		for ft in ft_order:
 			new_X = X.drop(ft_dict[ft], axis=1)
-			io.write_df(new_X, os.path.join(data_path, 'l1o_%s_X.npz'%ft), sparse_fmt='csc', compress=True)
+			io.write_df(new_X, os.path.join(data_path, 'l1o_%s_X.npz'%ft), sparse_fmt='csr', compress=True)
 	else:
 		for i in range(Y.shape[1]):
-			X_i = io.read_df(os.path.join(data_path, 'X_%i.npz'%i), sparse_fmt='csc')
+			X_i = io.read_df(os.path.join(data_path, 'X_%i.npz'%i), sparse_fmt='csr')
 			for ft in ft_order:
 				new_X = X_i.drop(ft_dict[ft], axis=1)
-				io.write_df(new_X, os.path.join(data_path, 'l1o_%s_X_%i.npz'%(ft,i)), sparse_fmt='csc', compress=True)
+				io.write_df(new_X, os.path.join(data_path, 'l1o_%s_X_%i.npz'%(ft,i)), sparse_fmt='csr', compress=True)
 				
 				
 def ftcor(dir_path='.'):
@@ -385,7 +387,7 @@ def main():
 	elif (opts.method == 'p2u'):
 		pred2uniq(opts.loc, 'pred_crsval_#CRST#_#MDL#_#PID#.npz', ['UDT-RF', 'DF-RbfSVM', 'MEM', 'MNB'], pids=['all'])
 	elif (opts.method == 'n2d'):
-		nt2db(opts.loc)
+		nt2db()
 	elif (opts.method == 'n2x'):
 		nt2xml(opts.loc)
 	elif (opts.method == 'axstat'):
@@ -420,8 +422,9 @@ if __name__ == '__main__':
 	op = OptionParser()
 	op.add_option('-f', '--fmt', default='npz', help='data stored format: csv or npz [default: %default]')
 	op.add_option('-l', '--loc', default='.', help='the files in which location to be process')
+	op.add_option('-o', '--output', default='.', help='the path to store the data')
 	op.add_option('-e', '--ele', default='', help='plot elements string used in the function, format: annot_x0,...,annot_xn;annot_y0,...,annot_yn#ref_x0,...,ref_xn;ref_y0,...,ref_yn')
-	op.add_option('-c', '--cfg', default='', help='config string used in the plot function, format: {\'param_name\':param_value}')
+	op.add_option('-c', '--cfg', default='', help='config string used in the plot function, format: {\'param_name1\':param_value1[, \'param_name1\':param_value1]}')
 	op.add_option('-m', '--method', help='main method to run')
 
 	(opts, args) = op.parse_args()

@@ -79,7 +79,7 @@ The parameters under the function `init` means that they are defined in module s
 
 ### Locate the Pre-Generated Dataset
 
-After cloning the repository, you can download some pre-generated datasets [here](https://data.mendeley.com/datasets/s9m6tzcv9d) . The datasets described below are organized as [csc sparse matrices](http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html), stored in compressed `npz` files using the [function](http://docs.scipy.org/doc/numpy/reference/generated/numpy.savez_compressed.html) of `numpy`. 
+After cloning the repository, you can download some pre-generated datasets [here](https://data.mendeley.com/datasets/s9m6tzcv9d) . The datasets described below are organized as [csr sparse matrices](http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html), stored in compressed `npz` files using the [function](http://docs.scipy.org/doc/numpy/reference/generated/numpy.savez_compressed.html) of `numpy`. 
 
 Filename | Description  
 --- | ---  
@@ -100,7 +100,7 @@ You can load a dataset into a [Pandas DataFrame](http://pandas.pydata.org/pandas
 
 ```python
 import bionlp.util.io as io
-X = io.read_df('X.npz', with_idx=True, sparse_fmt='csc')
+X = io.read_df('X.npz', with_idx=True, sparse_fmt='csr')
 ```
 
 ### A Simple Example

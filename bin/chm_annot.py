@@ -31,12 +31,12 @@ from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, Baggi
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.pipeline import FeatureUnion, Pipeline
 
+from bionlp import ftslct, txtclf
+from bionlp.util import io, func
 import bionlp.spider.pubmed as pm
-import bionlp.spider.hoc as hoc
-import bionlp.txtclf as txtclf
-import bionlp.ftslct as ftslct
-import bionlp.util.io as io
-import bionlp.util.func as func
+
+import hoc
+
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 PAR_DIR = os.path.abspath(os.path.join(FILE_DIR, os.path.pardir))
@@ -51,17 +51,17 @@ cfgr = None
 spdr = pm
 
 
-def load_data(mltl=False, pid=0, spfmt='csc'):
+def load_data(mltl=False, pid=0, spfmt='csr'):
 	print 'Loading data...'
 	try:
 		if (mltl):
 			# From combined data file
-			X, Y = spdr.get_data(None, True)
+			X, Y = spdr.get_data(None, from_file=True, fmt=opts.fmt, spfmt=opts.spfmt)
 			y = Y.as_matrix()
 		else:
 			# From splited data file
 #			Xs, Ys = spdr.get_mltl([pid])
-			Xs, Ys = spdr.get_mltl_npz([pid], spfmt=spfmt)
+			Xs, Ys = spdr.get_mltl_npz(lbs=[pid], spfmt=spfmt)
 			X = Xs[0]
 			y = Ys[0].as_matrix().reshape(Ys[0].shape[0],)
 	except Exception as e:
@@ -384,7 +384,7 @@ def all():
 	model_iter = gen_cb_models if opts.comb else gen_bm_models
 	model_param = dict(tuned=opts.best, glb_filtnames=FILT_NAMES, glb_clfnames=CLF_NAMES)
 	global_param = dict(comb=opts.comb, pl_names=PL_NAMES, pl_set=PL_SET)
-	txtclf.cross_validate(X, Y, pid, model_iter, model_param, avg=opts.avg, kfold=opts.kfold, cfg_param=cfgr('bionlp.txtclf', 'cross_validate'), global_param=global_param)
+	txtclf.cross_validate(X, Y, model_iter, model_param, avg=opts.avg, kfold=opts.kfold, cfg_param=cfgr('bionlp.txtclf', 'cross_validate'), global_param=global_param, lbid=pid)
 
 	
 def from_pbmd():
@@ -395,7 +395,7 @@ def from_pbmd():
 
 	
 def tuning():
-	from sklearn.cross_validation import KFold
+	from sklearn.model_selection import KFold
 	if (opts.mltl):
 		pid = 'all'
 	else:
@@ -408,11 +408,11 @@ def tuning():
 	
 	## Parameter tuning
 	print 'Parameter tuning is starting...'
-	ext_params = dict(cv=KFold(y.shape[0], n_folds=opts.kfold, shuffle=True, random_state=0))
+	ext_params = dict(cv=KFold(n_splits=opts.kfold, shuffle=True, random_state=0))
 	for mdl_name, mdl, params in gen_mdl_params(opts.rdtune):
 		params.update(ext_params)
 		print 'Tuning hyperparameters for %s' % mdl_name
-		pt_result = txtclf.tune_param(mdl_name, mdl, X, y, opts.rdtune, params, mltl=opts.mltl, avg=opts.avg, n_jobs=opts.np)
+		pt_result = txtclf.tune_param(mdl_name, mdl, X, y, opts.rdtune, params, mltl=opts.mltl, avg='micro' if opts.avg == 'all' else opts.avg, n_jobs=opts.np)
 		io.write_npz(dict(zip(['best_params', 'best_score', 'score_avg_cube', 'score_std_cube', 'dim_names', 'dim_vals'], pt_result)), '%sparam_tuning_for_%s_%s' % ('rd_' if opts.rdtune else '', mdl_name.replace(' ', '_').lower(), pid))
 
 
@@ -421,13 +421,13 @@ def demo():
 	global cfgr
 	if not os.path.exists('data'):
 		os.makedirs('data')
-	urllib.urlretrieve ('https://data.mendeley.com/datasets/s9m6tzcv9d/2/files/239690a1-3c24-45b8-96cf-ff32183d140f/udt_exp_X.npz', 'data/X.npz')
-	urllib.urlretrieve ('https://data.mendeley.com/datasets/s9m6tzcv9d/2/files/5ad8019b-4853-462f-8a42-d5eee1a311e3/Y.npz', 'data/Y.npz')
+	urllib.urlretrieve ('http://data.mendeley.com/datasets/s9m6tzcv9d/3/files/87afede7-5a4c-4cee-99d3-45cc638b5d12/udt_exp_X.npz', 'data/X.npz')
+	urllib.urlretrieve ('http://data.mendeley.com/datasets/s9m6tzcv9d/3/files/bfb90278-c313-47c6-ace7-2dd1e48b5daa/Y.npz', 'data/Y.npz')
 	hoc.DATA_PATH = 'data'
 	X, Y = load_data(True, 'all', opts.spfmt)
 	def model_iter(tuned, glb_filtnames, glb_clfnames):
 		yield 'UDT-RF', Pipeline([('clf', OneVsRestClassifier(RandomForestClassifier(max_features=0.7, min_samples_leaf=1, n_estimators=200, class_weight='balanced'), n_jobs=opts.np))])
-	txtclf.cross_validate(X, Y, 'all', model_iter, model_param=dict(tuned=False, glb_filtnames=[], glb_clfnames=[]), avg='micro', kfold=5, cfg_param=cfgr('bionlp.txtclf', 'cross_validate'), global_param=dict(comb=True, pl_names=[], pl_set=set([])))
+	txtclf.cross_validate(X, Y, model_iter, model_param=dict(tuned=False, glb_filtnames=[], glb_clfnames=[]), avg='micro', kfold=5, cfg_param=cfgr('bionlp.txtclf', 'cross_validate'), global_param=dict(comb=True, pl_names=[], pl_set=set([])), lbid=-1)
 
 
 def main():
@@ -450,7 +450,7 @@ if __name__ == '__main__':
 	op.add_option('-p', '--pid', default=0, action='store', type='int', dest='pid', help='indicate the process ID')
 	op.add_option('-n', '--np', default=-1, action='store', type='int', dest='np', help='indicate the number of processes used for training')
 	op.add_option('-f', '--fmt', default='npz', help='data stored format: csv or npz [default: %default]')
-	op.add_option('-s', '--spfmt', default='csc', help='sparse data stored format: csc or csr [default: %default]')
+	op.add_option('-s', '--spfmt', default='csr', help='sparse data stored format: csr or csc [default: %default]')
 	op.add_option('-t', '--tune', action='store_true', dest='tune', default=False, help='firstly tune the hyperparameters')
 	op.add_option('-r', '--rdtune', action='store_true', dest='rdtune', default=False, help='randomly tune the hyperparameters')
 	op.add_option('-b', '--best', action='store_true', dest='best', default=False, help='use the tuned hyperparameters')
@@ -466,10 +466,10 @@ if __name__ == '__main__':
 		op.error('Please input options instead of arguments.')
 		exit(1)
 		
+	spdr = SPDR_MAP[opts.input]
 	# Parse config file
 	if (os.path.exists(CONFIG_FILE)):
 		cfgr = io.cfg_reader(CONFIG_FILE)
-		spdr = SPDR_MAP[opts.input]
 		spdr_cfg = cfgr('bionlp.spider.%s' % opts.input, 'init')
 		if (len(spdr_cfg) > 0 and spdr_cfg['DATA_PATH'] is not None and os.path.exists(spdr_cfg['DATA_PATH'])):
 			spdr.DATA_PATH = spdr_cfg['DATA_PATH']
