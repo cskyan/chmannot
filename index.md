@@ -1,6 +1,6 @@
 # Cancer Hallmark Annotator
 
-`chmannot` is an automatic annotator of cancer hallmark on biomedical literature. It supports abstract-level annotation which means that given the abstract of a paper in PubMed it could predict the hallmark labels related to this paper. It is mainly used to evaluate the computational models and tune the model parameters. It also provides several utility functions to manipulate the dataset and post-process the results.
+`CHmAnnot` is an automatic annotator of cancer hallmark on biomedical literature. It supports abstract-level annotation which means that given the abstract of a paper in PubMed it could predict the hallmark labels related to this paper. It is mainly used to evaluate the computational models and tune the model parameters. It also provides several utility functions to manipulate the dataset and post-process the results.
 
 ## Getting Started
 
