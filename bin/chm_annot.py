@@ -67,7 +67,7 @@ def load_data(mltl=False, pid=0, spfmt='csr'):
 	except Exception as e:
 		print e
 		print 'Can not find the data files!'
-		exit(1)
+		sys.exit(1)
 	return X, y
 
 def build_model(mdl_func, mdl_t, mdl_name, tuned=False, pr=None, mltl=False, **kwargs):
@@ -464,7 +464,7 @@ if __name__ == '__main__':
 	if len(args) > 0:
 		op.print_help()
 		op.error('Please input options instead of arguments.')
-		exit(1)
+		sys.exit(1)
 		
 	spdr = SPDR_MAP[opts.input]
 	# Parse config file

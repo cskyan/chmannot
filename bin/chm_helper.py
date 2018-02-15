@@ -10,6 +10,7 @@
 #
 
 import os
+import sys
 import ast
 import glob
 import logging
@@ -41,7 +42,7 @@ def post_process(spdr):
 		X, Y = spdr.get_feats_npz(['y_%s'%i for i in range(10)])
 	else:
 		print 'Unsupported format: %s' % opts.fmt
-		exit(1)
+		sys.exit(1)
 
 		
 def npzs2yaml(dir_path='.', mdl_t='Classifier'):
@@ -431,7 +432,7 @@ if __name__ == '__main__':
 	if len(args) > 0:
 		op.print_help()
 		op.error('Please input options instead of arguments.')
-		exit(1)
+		sys.exit(1)
 		
 	# Parse config file
 	if (os.path.exists(CONFIG_FILE)):
