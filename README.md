@@ -1,6 +1,6 @@
 # Cancer Hallmark Annotator
 
-`CHmAnnot` is an automatic annotator of cancer hallmark on biomedical literature. It supports abstract-level annotation which means that given the abstract of a paper in PubMed it could predict the hallmark labels related to this paper. It is mainly used to evaluate the computational models and tune the model parameters. It also provides several utility functions to manipulate the dataset and post-process the results.
+`chmannot` is an automatic annotator of cancer hallmark on biomedical literature. It supports abstract-level annotation which means that given the abstract of a paper in PubMed it could predict the hallmark labels related to this paper. It is mainly used to evaluate the computational models and tune the model parameters. It also provides several utility functions to manipulate the dataset and post-process the results.
 
 ## Getting Started
 
@@ -11,7 +11,7 @@ The following instructions will help you get a copy of the source code as well a
 Firstly, you need to install a Python Interpreter (tested 2.7.12) and these packages:
 
 * numpy (tested 1.11.1)
-* scipy (tested 1.11.1)
+* scipy (tested 0.18.1)
 * matplotlib (tested 1.5.1)
 * pandas (tested 0.18.1)
 * scikit-learn (tested 0.17.1)
