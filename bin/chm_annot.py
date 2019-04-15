@@ -364,7 +364,7 @@ def gen_mdl_params(rdtune=False):
 			yield mdl_name, mdl, params
 
 
-def all():
+def all_entry():
 	global FILT_NAMES, CLF_NAMES, PL_NAMES, PL_SET, cfgr
 
 	if (opts.mltl):
@@ -437,7 +437,7 @@ def main():
 	if (opts.method == 'demo'):
 		demo()
 		return
-	all()
+	all_entry()
 
 
 if __name__ == '__main__':
